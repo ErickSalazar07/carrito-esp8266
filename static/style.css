@@ -1,0 +1,420 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary-color: #3b82f6;
+    --secondary-color: #10b981;
+    --danger-color: #ef4444;
+    --bg-dark: #1e293b;
+    --bg-card: #334155;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --border-color: #475569;
+    --accent-color: #8b5cf6;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Header */
+header {
+    background: var(--bg-card);
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    margin-bottom: 24px;
+}
+
+header h1 {
+    font-size: 2rem;
+    margin-bottom: 16px;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: 20px;
+    border: 1px solid var(--danger-color);
+    transition: all 0.3s ease;
+}
+
+.status-indicator.connected {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: var(--secondary-color);
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--danger-color);
+    animation: pulse 2s infinite;
+}
+
+.status-indicator.connected .status-dot {
+    background: var(--secondary-color);
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Botones */
+.btn-primary, .btn-secondary {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.btn-primary:disabled {
+    background: #64748b;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.btn-secondary {
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-card);
+    transform: translateY(-2px);
+}
+
+/* Main content */
+main {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+section {
+    background: var(--bg-card);
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    color: var(--text-primary);
+}
+
+/* Valores actuales */
+.values-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+}
+
+.value-card {
+    background: var(--bg-dark);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    text-align: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.value-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+}
+
+.value-card h3 {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+
+.value-card .value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+/* Gráficas */
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 24px;
+    margin-top: 24px;
+}
+
+.chart-container {
+    position: relative;
+    height: 350px;
+    background: var(--bg-dark);
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.chart-title {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    text-align: center;
+    font-weight: 500;
+}
+
+/* Tabla */
+.table-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+#rowCount {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 400px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-dark);
+}
+
+thead {
+    background: rgba(59, 130, 246, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
+}
+
+td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+tbody tr {
+    transition: background 0.2s ease;
+}
+
+tbody tr:hover {
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.empty-state td {
+    text-align: center;
+    color: var(--text-secondary);
+    font-style: italic;
+    padding: 40px;
+}
+
+/* Sección de Fórmulas */
+.formulas-section {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.formulas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+.formula-card {
+    background: var(--bg-dark);
+    padding: 24px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.formula-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--accent-color), var(--primary-color));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.formula-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(139, 92, 246, 0.2);
+    border-color: var(--accent-color);
+}
+
+.formula-card:hover::before {
+    opacity: 1;
+}
+
+.formula-card h3 {
+    font-size: 1.1rem;
+    color: var(--accent-color);
+    margin-bottom: 16px;
+    font-weight: 600;
+}
+
+.formula {
+    background: rgba(139, 92, 246, 0.05);
+    padding: 20px;
+    border-radius: 8px;
+    margin: 16px 0;
+    text-align: center;
+    border: 1px solid rgba(139, 92, 246, 0.1);
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.formula-description {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin-top: 12px;
+}
+
+.formula-description em {
+    color: var(--accent-color);
+    font-style: normal;
+    font-weight: 600;
+}
+
+/* MathJax styling */
+mjx-container {
+    color: var(--text-primary) !important;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .formulas-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 12px;
+    }
+
+    header h1 {
+        font-size: 1.5rem;
+    }
+
+    .status-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .values-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .chart-container {
+        height: 300px;
+    }
+
+    section {
+        padding: 16px;
+    }
+
+    th, td {
+        padding: 8px 12px;
+        font-size: 0.9rem;
+    }
+    
+    .formula-card {
+        padding: 16px;
+    }
+    
+    .formula {
+        padding: 16px;
+        min-height: 60px;
+    }
+}
+
+@media (max-width: 480px) {
+    .values-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .formulas-grid {
+        grid-template-columns: 1fr;
+    }
+}

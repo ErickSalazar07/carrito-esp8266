@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor Robot ESP8266</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 Monitor Robot ESP8266</h1>
+            <div class="status-bar">
+                <div class="status-indicator" id="statusIndicator">
+                    <span class="status-dot"></span>
+                    <span id="statusText">Conectando...</span>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <!-- Sección de valores actuales -->
+            <section class="current-values">
+                <h2>📊 Valores Actuales</h2>
+                <div class="values-grid">
+                    <div class="value-card">
+                        <h3>Posición X</h3>
+                        <p class="value" id="posX">-- m</p>
+                    </div>
+                    <div class="value-card">
+                        <h3>Posición Y</h3>
+                        <p class="value" id="posY">-- m</p>
+                    </div>
+                    <div class="value-card">
+                        <h3>Vel. Izquierda</h3>
+                        <p class="value" id="velIzq">-- m/s</p>
+                    </div>
+                    <div class="value-card">
+                        <h3>Vel. Derecha</h3>
+                        <p class="value" id="velDer">-- m/s</p>
+                    </div>
+                    <div class="value-card">
+                        <h3>Vel. Promedio</h3>
+                        <p class="value" id="velProm">-- m/s</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Gráficas -->
+            <section class="charts-section">
+                <h2>📈 Gráficas en Tiempo Real</h2>
+                
+                <!-- Gráfica de Velocidad Promedio -->
+                <div class="chart-container">
+                    <h3 class="chart-title">Velocidad Promedio vs Tiempo</h3>
+                    <canvas id="velocidadChart"></canvas>
+                </div>
+
+                <!-- Gráficas de Posición -->
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3 class="chart-title">Posición X vs Tiempo</h3>
+                        <canvas id="posicionXChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3 class="chart-title">Posición Y vs Tiempo</h3>
+                        <canvas id="posicionYChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tabla de datos -->
+            <section class="table-section">
+                <h2>📋 Historial de Datos</h2>
+                <div class="table-controls">
+                    <button id="btnLimpiar" class="btn-secondary">🗑️ Limpiar Tabla</button>
+                    <span id="rowCount">0 registros</span>
+                </div>
+                <div class="table-wrapper">
+                    <table id="dataTable">
+                        <thead>
+                            <tr>
+                                <th>Tiempo</th>
+                                <th>Pos X (m)</th>
+                                <th>Pos Y (m)</th>
+                                <th>Vel Izq (m/s)</th>
+                                <th>Vel Der (m/s)</th>
+                                <th>Vel Prom (m/s)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <tr class="empty-state">
+                                <td colspan="6">Esperando datos...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Sección de Fórmulas -->
+            <section class="formulas-section">
+                <h2>📐 Fórmulas Matemáticas del Robot</h2>
+                
+                <div class="formulas-grid">
+                    <div class="formula-card">
+                        <h3>Circunferencia de la Rueda</h3>
+                        <div class="formula">
+                            \[C = \pi \cdot D\]
+                        </div>
+                        <p class="formula-description">
+                            Circunferencia de la rueda donde <em>D = 0.06 m</em> (diámetro). <br>
+                            Resultado: <em>C = 0.188 m</em>
+                        </p>
+                    </div>
+
+                    <div class="formula-card">
+                        <h3>RPM (Revoluciones Por Minuto)</h3>
+                        <div class="formula">
+                            \[RPM = \frac{P}{N} \times 60\]
+                        </div>
+                        <p class="formula-description">
+                            <em>P</em> = pulsos contados en 1 segundo, <em>N = 20</em> (huecos del encoder). <br>
+                            Se calcula para rueda izquierda y derecha independientemente.
+                        </p>
+                    </div>
+
+                    <div class="formula-card">
+                        <h3>Velocidad Lineal de Cada Rueda</h3>
+                        <div class="formula">
+                            \[V = \frac{C \times RPM}{60}\]
+                        </div>
+                        <p class="formula-description">
+                            Velocidad lineal en <em>m/s</em>. Se divide entre 60 para convertir de minutos a segundos. <br>
+                            Se calcula: <em>V<sub>izq</sub></em> y <em>V<sub>der</sub></em>
+                        </p>
+                    </div>
+
+                    <div class="formula-card">
+                        <h3>Velocidad Promedio del Robot</h3>
+                        <div class="formula">
+                            \[V_{prom} = \frac{V_{izq} + V_{der}}{2}\]
+                        </div>
+                        <p class="formula-description">
+                            Promedio aritmético de las velocidades de ambas ruedas. <br>
+                            Esta es la velocidad de desplazamiento del centro del robot.
+                        </p>
+                    </div>
+
+                    <div class="formula-card">
+                        <h3>Distancia Recorrida</h3>
+                        <div class="formula">
+                            \[d = V_{prom} \times \Delta t\]
+                        </div>
+                        <p class="formula-description">
+                            Distancia recorrida en cada intervalo de tiempo. <br>
+                            <em>Δt = 1 segundo</em> (tiempo entre mediciones).
+                        </p>
+                    </div>
+
+                    <div class="formula-card">
+                        <h3>Orientación del Robot (θ)</h3>
+                        <div class="formula">
+                            \[\theta_{nuevo} = \theta_{anterior} \pm 90°\]
+                        </div>
+                        <p class="formula-description">
+                            <strong>Giro izquierda:</strong> <em>θ = θ + 90°</em> (activando motor derecho 750ms). <br>
+                            <strong>Giro derecha:</strong> <em>θ = θ - 90°</em> (activando motor izquierdo 750ms). <br>
+                            Los valores válidos son: <em>0°, 90°, 180°, 270°</em>
+                        </p>
+                    </div>
+
+                    <div class="formula-card">
+                        <h3>Sistema de Referencia</h3>
+                        <div class="formula">
+                            \[\begin{cases}
+                            \theta = 0° & \rightarrow \text{Este (+X)} \\
+                            \theta = 90° & \rightarrow \text{Norte (+Y)} \\
+                            \theta = 180° & \rightarrow \text{Oeste (-X)} \\
+                            \theta = 270° & \rightarrow \text{Sur (-Y)}
+                            \end{cases}\]
+                        </div>
+                        <p class="formula-description">
+                            Sistema de coordenadas cartesiano donde el robot se mueve en direcciones cardinales discretas.
+                        </p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const socket = io();
+        const MAX_DATA_POINTS = 50;
+        const MAX_TABLE_ROWS = 100;
+
+        // Arrays para las gráficas
+        let labels = [];
+        let velPromData = [];
+        let posXData = [];
+        let posYData = [];
+        
+        // Variable para guardar el tiempo de inicio
+        let tiempoInicio = null;
+
+        // Configuración común para todas las gráficas
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 300
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    ticks: {
+                        color: '#94a3b8'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    ticks: {
+                        color: '#94a3b8'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: '#f1f5f9'
+                    }
+                }
+            }
+        };
+
+        // Gráfica de Velocidad Promedio
+        const ctxVel = document.getElementById('velocidadChart').getContext('2d');
+        const velocidadChart = new Chart(ctxVel, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Velocidad Promedio (m/s)',
+                    data: velPromData,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                ...commonOptions,
+                scales: {
+                    ...commonOptions.scales,
+                    y: {
+                        ...commonOptions.scales.y,
+                        title: {
+                            display: true,
+                            text: 'Velocidad (m/s)',
+                            color: '#f1f5f9'
+                        }
+                    },
+                    x: {
+                        ...commonOptions.scales.x,
+                        title: {
+                            display: true,
+                            text: 'Tiempo (s)',
+                            color: '#f1f5f9'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Gráfica de Posición X
+        const ctxX = document.getElementById('posicionXChart').getContext('2d');
+        const posicionXChart = new Chart(ctxX, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Posición X (m)',
+                    data: posXData,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                ...commonOptions,
+                scales: {
+                    ...commonOptions.scales,
+                    y: {
+                        ...commonOptions.scales.y,
+                        title: {
+                            display: true,
+                            text: 'Posición X (m)',
+                            color: '#f1f5f9'
+                        }
+                    },
+                    x: {
+                        ...commonOptions.scales.x,
+                        title: {
+                            display: true,
+                            text: 'Tiempo (s)',
+                            color: '#f1f5f9'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Gráfica de Posición Y
+        const ctxY = document.getElementById('posicionYChart').getContext('2d');
+        const posicionYChart = new Chart(ctxY, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Posición Y (m)',
+                    data: posYData,
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                ...commonOptions,
+                scales: {
+                    ...commonOptions.scales,
+                    y: {
+                        ...commonOptions.scales.y,
+                        title: {
+                            display: true,
+                            text: 'Posición Y (m)',
+                            color: '#f1f5f9'
+                        }
+                    },
+                    x: {
+                        ...commonOptions.scales.x,
+                        title: {
+                            display: true,
+                            text: 'Tiempo (s)',
+                            color: '#f1f5f9'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Elementos del DOM
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusText = document.getElementById('statusText');
+        const tableBody = document.getElementById('tableBody');
+        const rowCount = document.getElementById('rowCount');
+        const btnLimpiar = document.getElementById('btnLimpiar');
+
+        // Conectar con el servidor
+        socket.on('connect', () => {
+            console.log('Conectado al servidor WebSocket');
+        });
+
+        // Recibir estado del ESP
+        socket.on('estado_esp', (data) => {
+            updateStatus(data.conectado);
+        });
+
+        // Recibir nuevos datos
+        socket.on('nuevo_dato', (data) => {
+            updateCurrentValues(data);
+            updateCharts(data);
+            updateTable(data);
+        });
+
+        // Actualizar valores actuales
+        function updateCurrentValues(data) {
+            document.getElementById('posX').textContent = `${data.x_pos.toFixed(3)} m`;
+            document.getElementById('posY').textContent = `${data.y_pos.toFixed(3)} m`;
+            document.getElementById('velIzq').textContent = `${data.vel_izq.toFixed(3)} m/s`;
+            document.getElementById('velDer').textContent = `${data.vel_der.toFixed(3)} m/s`;
+            document.getElementById('velProm').textContent = `${data.vel_prom.toFixed(3)} m/s`;
+        }
+
+        // Actualizar gráficas
+        function updateCharts(data) {
+            // Calcular tiempo transcurrido
+            if (tiempoInicio === null) {
+                tiempoInicio = new Date();
+            }
+            const tiempoActual = new Date();
+            const segundosTranscurridos = ((tiempoActual - tiempoInicio) / 1000).toFixed(2);
+
+            labels.push(segundosTranscurridos);
+            velPromData.push(data.vel_prom);
+            posXData.push(data.x_pos);
+            posYData.push(data.y_pos);
+
+            // Mantener solo los últimos MAX_DATA_POINTS puntos
+            if (labels.length > MAX_DATA_POINTS) {
+                labels.shift();
+                velPromData.shift();
+                posXData.shift();
+                posYData.shift();
+            }
+
+            velocidadChart.update();
+            posicionXChart.update();
+            posicionYChart.update();
+        }
+
+        // Actualizar tabla
+        function updateTable(data) {
+            // Remover mensaje de "esperando datos"
+            const emptyState = tableBody.querySelector('.empty-state');
+            if (emptyState) {
+                emptyState.remove();
+            }
+
+            // Calcular segundos transcurridos desde el inicio
+            if (tiempoInicio === null) {
+                tiempoInicio = new Date();
+            }
+            const tiempoActual = new Date();
+            const segundosTranscurridos = ((tiempoActual - tiempoInicio) / 1000).toFixed(2);
+
+            // Crear nueva fila
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${segundosTranscurridos}s</td>
+                <td>${data.x_pos.toFixed(3)}</td>
+                <td>${data.y_pos.toFixed(3)}</td>
+                <td>${data.vel_izq.toFixed(3)}</td>
+                <td>${data.vel_der.toFixed(3)}</td>
+                <td>${data.vel_prom.toFixed(3)}</td>
+            `;
+
+            // Insertar al INICIO de la tabla (datos más recientes arriba)
+            tableBody.insertBefore(row, tableBody.firstChild);
+
+            // Limitar número de filas
+            if (tableBody.children.length > MAX_TABLE_ROWS) {
+                tableBody.removeChild(tableBody.lastChild);
+            }
+
+            // Actualizar contador
+            rowCount.textContent = `${tableBody.children.length} registros`;
+        }
+
+        // Actualizar estado de conexión
+        function updateStatus(connected) {
+            if (connected) {
+                statusIndicator.classList.add('connected');
+                statusText.textContent = 'Conectado';
+            } else {
+                statusIndicator.classList.remove('connected');
+                statusText.textContent = 'Desconectado - Reintentando...';
+            }
+        }
+
+        // Botón limpiar tabla
+        btnLimpiar.addEventListener('click', () => {
+            tableBody.innerHTML = '<tr class="empty-state"><td colspan="6">Tabla limpiada</td></tr>';
+            rowCount.textContent = '0 registros';
+            // Reiniciar el tiempo de inicio
+            tiempoInicio = null;
+            
+            // Limpiar gráficas
+            labels = [];
+            velPromData = [];
+            posXData = [];
+            posYData = [];
+            
+            velocidadChart.update();
+            posicionXChart.update();
+            posicionYChart.update();
+        });
+    </script>
+</body>
+</html>
