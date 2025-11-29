@@ -64,17 +64,17 @@ ESP8266 → Socket TCP → Servidor Python (Flask + SocketIO) → Página Web en
 
 ## 📁 Estructura del Proyecto
 
-.
-├── app.py
-├── control_por_comando_esp8266.ino
-├── control_robot.py
-├── enviar_datos_velocidad_esp8266.ino
-├── LICENSE
-├── README.md
-├── static
-│   └── style.css
-└── templates
-    └── index.html
+.<br>
+├── app.py <br>
+├── control\_por\_comando\_esp8266.ino<br>
+├── control\_robot.py<br>
+├── enviar\_datos\_velocidad\_esp8266.ino<br>
+├── LICENSE<br>
+├── README.md<br>
+├── static<br>
+│   └── style.css<br>
+└── templates<br>
+    └── index.html<br>
 
 ### Descripción de Archivos
 
